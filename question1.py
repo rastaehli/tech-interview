@@ -3,7 +3,7 @@ of t is a substring of s. For example: if s = 'udacity' and t = 'ad',
 then the function returns True. Your function definition should look
 like: 'question1(s, t)', and return a boolean True or False."""
 
-"""complexity is a function of both len s and len t.  Call these n and m.
+"""Complexity is a function of both len s and len t.  Call these n and m.
 The main function question1 has a main loop that executes in the worst
 case n times as it iterates through positions of s.  Inside this loop, the
 function 'anagramFound' iterates m times as it checks for each letter in t,
@@ -12,6 +12,12 @@ O(m).  So the inner loop executes in the worst case m * 2m.  The overall
 complexity is O(nm^2).  It is worth noting that the algorithm returns False
 immediately if m > n and any optimization should consider the common range
 of sizes for each input.
+
+Space complexity is O(m) since each call of anagramFound allocates and 
+frees a list of size m.  This memory management could be eliminated by
+reusing a bag data structure that allowed us to keep track
+which letters had been removed.
+"""
 
 def question1(s, t):
 	"""return True if an anagram of t is a substring of s."""
@@ -30,12 +36,12 @@ def question1(s, t):
 
 def anagramFound(s, t, p):
 	"""return true if an anagram of t is found at position p of s"""
-	bag = lettersOf(t)  # take letters from t in any order to match s at p
-	while len(bag) > 0:
-		# print(s[p], bag)
-		if s[p] in bag:
+	letters = lettersOf(t)  # take letters from t in any order to match s at p
+	while len(letters) > 0:
+		# print(s[p], letters)
+		if s[p] in letters:
 			# print('letter found')
-			bag.remove(s[p])
+			letters.remove(s[p])
 			p += 1
 		else:
 			return False

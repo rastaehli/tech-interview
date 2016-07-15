@@ -27,6 +27,9 @@ The size of the list shrinks rapidly with each pass as larger palindromes
 are rare and the algorithm stops after m passes when no longer palindromes
 are found.  The average case complexity is then approximately 2n + mn/10
 or O(mn).  Since m is a constant, the complexity is O(n).
+
+The additional space required is primarily for the linked list items, which
+are small fixed size Palindrome objects.  The space complexity is O(n).
 """
 
 def question2(a):
