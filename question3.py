@@ -12,6 +12,57 @@ Vertices are represented as unique strings. The function definition should be
 question3(G)
 """
 
+"""This algorithm computes a minimum spanning tree for the input graph
+by adding edges to the tree shortest edge first.  That is, the list of
+all edges in the graph is sorted and the shortest edge is removed:
+  - If this edge connects two nodes that are not yet part of the tree
+    then the edge and its nodes are remembered as a partition to be
+    connected to the rest of the tree later.
+  - If this edge connects a node in a known partition to a node not yet in the
+    tree, then this edge and the new node are added to this partition.
+  - If this edge connects nodes in two different known partitions
+    the partitions are merged and the edge added.
+  - If this edge connects two nodes already visited, the edge is discarded.
+
+This process is repeated for each edge until all nodes from the graph are 
+in the tree and all partitions have been merged.  This assumes that the input
+graph is connected and that it does not matter which direction edges are 
+traversed.
+
+Each partition maintains a dictionary of its nodes so it is efficient to 
+test whether a given node is contained in the partition.
+
+Because this algorithm adds each node exactly
+once with an edge connecting it to the rest, a tree is formed.  Because
+the tree is constructed shortest edge first, we know it is a minimum
+spanning tree.  I think this could be proved by induction but I'll skip
+the proof here."""
+
+"""Complexity of this algorithm depends on the number of nodes n and the
+number of edges e.  In the initial sort of the edges uses the default 
+Python sort function for lists, which is O(e(log e)).  The main loop adds
+one or two nodes to the tree each loop so in the worst case it executes
+n times.  Inside the main loop, the search for the next edge that grows
+the tree consists of:
+  - popping from the edgeQueue which is O(1)
+  - getUnvisitedNodes which is O(1)
+  - sometimes calling partitionsConnected, which iterates through the list
+    of known partitions, checking their dictionaries for the associated nodes.
+    The python dictionary lookup is O(1) and the number of partitions begins
+    at 1 and can never be bigger than the number of n/2 since each
+    partition has at least 2 nodes in it.  In the worst case this is O(n).
+And also in the main loop, the growing of the tree consists of:
+  - adding a partition which is O(1), or
+  - finding a partition to add a node and edge, which is O(n), or
+  - merging two partitions, which O(n + e) in the worst case
+
+Putting this together, I get:
+  e(log e) + n( 1 or n or n+e )
+
+When n is large, this is O(n^2), but if e is much larger than n then the n*e
+term would be more significant.
+"""
+
 class Node(object):
     def __init__(self, value):
         self.value = value
@@ -134,20 +185,7 @@ def question3(G):
     if len(nodes) < 2:
         return graph
 
-    """Now compute minimum spanning tree by adding edges to unvisited
-    nodes shortest edge first until all nodes have been visited and all
-    partitions are connected.  That is, when each edge is added, it either
-    connects a new node to an existing group of connected, visited, nodes
-    (a partition) or it forms a new partition of the two nodes it connects.
-    We keep a list of partitions, each with a dictionary
-    of its nodes so it is efficient to test whether a given
-    node is in the partition.
-
-    Because this algorithm adds each node exactly
-    once with an edge connecting it to the rest, a tree is formed.  Because
-    the tree is constructed shortest edge first, we know it is a minimum
-    spanning tree.  I think this could be proved by induction but I'll skip
-    the proof here."""
+    """Now compute minimum spanning tree"""
     edgeQueue = sorted(edges, key=lambda edge: edge.value, reverse=True)
     totalNodeCount = len(nodes)
     e = edgeQueue.pop()  # first edge nodes form a new Partition
