@@ -150,11 +150,15 @@ def question3(G):
     the proof here."""
     edgeQueue = sorted(edges, key=lambda edge: edge.value, reverse=True)
     totalNodeCount = len(nodes)
+    print(edgeQueue)
     e = edgeQueue.pop()  # first edge nodes form a new Partition
+    print('first edge forms first partition:', e)
+    e.node_from.visited = True
+    e.node_to.visited = True
     partition = Partition([e.node_from, e.node_to], [e])
     nodesAdded = 2  # first edge added two nodes
     partitions = [partition]
-    # print(nodesAdded,totalNodeCount, len(partitions))
+    print(nodesAdded,totalNodeCount, len(partitions))
     while nodesAdded < totalNodeCount or len(partitions) > 1:
         newNodes = []
         toMerge = []
@@ -226,3 +230,13 @@ g = {'A': [('B', 2)],
  'B': [('A', 2), ('C', 5)],
  'C': [('B', 5)]}
 test(g, 7)
+
+g = {
+    'A': [('B', 3), ('F', 5), ('C', 2)],
+    'B': [('A', 3), ('C', 4), ('D', 1)],
+    'C': [('A', 2), ('B', 4), ('E', 1)],
+    'D': [('B', 1), ('E', 5), ('F', 1)],
+    'E': [('C', 1), ('D', 5), ('F', 1)],
+    'F': [('E', 1), ('A', 5), ('D', 1)],
+}
+test(g, 6)
