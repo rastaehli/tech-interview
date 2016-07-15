@@ -150,21 +150,17 @@ def question3(G):
     the proof here."""
     edgeQueue = sorted(edges, key=lambda edge: edge.value, reverse=True)
     totalNodeCount = len(nodes)
-    print(edgeQueue)
     e = edgeQueue.pop()  # first edge nodes form a new Partition
-    print('first edge forms first partition:', e)
     e.node_from.visited = True
     e.node_to.visited = True
     partition = Partition([e.node_from, e.node_to], [e])
     nodesAdded = 2  # first edge added two nodes
     partitions = [partition]
-    print(nodesAdded,totalNodeCount, len(partitions))
     while nodesAdded < totalNodeCount or len(partitions) > 1:
         newNodes = []
         toMerge = []
         while len(newNodes) == 0 and len(toMerge) == 0:
             e = edgeQueue.pop()  # get shortest edge that might add something
-            print('edge to inspect:', e)
             newNodes = getUnvisitedNodes(e)
             if len(newNodes) == 0:
                 toMerge = partitionsConnected(e, partitions)
@@ -173,34 +169,24 @@ def question3(G):
         if len(newNodes) == 2:
             partition = Partition([e.node_from, e.node_to], [e])
             partitions.append(partition)
-            print('+++++++added partition:', len(partitions))
         elif len(newNodes) == 1:
             newNode = newNodes[0]
             partition = findPartition(e, newNode, partitions)
             partition.addNode(newNode)
             partition.addEdge(e)
             nodesAdded += 1
-            print('+++++++added node:', nodesAdded)
         else:
             toMerge[0].addPartitionWithEdge(toMerge[1], e)
             partitions.remove(toMerge[1])
-            print('+++++++merged partitions:', len(partitions))
-        print('+++++++', nodesAdded, len(partitions))
 
     return partitions[0]
 
 def getUnvisitedNodes(edge):
     new = []
     if not edge.node_from.visited:
-        # print('+++++')
-        # print(edge.node_from)
         new.append(edge.node_from)
     if not edge.node_to.visited:
-        # print('_-_-_-_-')
-        # print(edge.node_to)
         new.append(edge.node_to)
-    # print('........')
-    # print(new)
     return new
 
 def partitionsConnected(edge, partitions):
