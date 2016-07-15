@@ -1,14 +1,14 @@
 """Question 3
-Given an undirected graph G, find the minimum spanning tree within G. A minimum 
-spanning tree connects all vertices in a graph with the smallest possible total 
-weight of edges. Your function should take in and return an adjacency list 
+Given an undirected graph G, find the minimum spanning tree within G. A minimum
+spanning tree connects all vertices in a graph with the smallest possible total
+weight of edges. Your function should take in and return an adjacency list
 structured like this:
 
 {'A': [('B', 2)],
- 'B': [('A', 2), ('C', 5)], 
+ 'B': [('A', 2), ('C', 5)],
  'C': [('B', 5)]}
 
-Vertices are represented as unique strings. The function definition should be 
+Vertices are represented as unique strings. The function definition should be
 question3(G)
 """
 
@@ -18,16 +18,35 @@ class Node(object):
         self.edges = []
         self.visited = False
 
+    def __str__(self):
+        return str(self.value)
+        # + ' edges: ' + str(self.edges) + ' visited: ' + str(self.visited)
+
+    def __repr__(self):
+        return 'Node('+self.__str__()+')'
+
 class Edge(object):
     def __init__(self, value, node_from, node_to):
         self.value = value
         self.node_from = node_from
         self.node_to = node_to
 
+    def __str__(self):
+        return 'value: ' + str(self.value) + ' from: ' + str(self.node_from) + ' to: ' + str(self.node_to)
+
+    def __repr__(self):
+        return 'Edge('+self.__str__()+')'
+
 class Graph(object):
     def __init__(self, nodes=[], edges=[]):
         self.nodes = nodes
         self.edges = edges
+
+    def edgesSum(self):
+        sum = 0
+        for e in self.edges:
+            sum += e.value
+        return sum
 
 class Partition(Graph):
     """constructing a partition, must take care to copy input nodes and
@@ -38,30 +57,30 @@ class Partition(Graph):
     for inclusion is easy and efficient."""
     def __init__(self, i_nodes, i_edges):
         self.nodes = []
+        self.edges = []
         self.nodeMap = {}
         for n in i_nodes:
-            copy = Node(n.value)
-            self.nodes.append(copy)
-            self.nodeMap[copy.value] = copy
+            self.addNode(self.copyNode(n))
         for e in i_edges:
-            fnode = self.nodeMap[e.node_from]
-            tnode = self.nodeMap[e.node_to]
-            copy = Edge(e.value, fnode, tnode)
-            fnode.edges.append(copy)
-            tnode.edges.append(copy)
-            self.edges.append(copy)
+            self.addEdge(self.copyEdge(e))
 
-    def addNodeWithEdge(self, node, edge):
-        nCopy = Node(node.value)
-        self.nodes.append(nCopy)
-        self.addEdge(copyEdge(edge))
+    def copyNode(self, node):
+        return Node(node.value)
+
+    def addNode(self, node):
+        self.nodes.append(node)
+        self.remember(node)
+
+    def remember(self, node):
+        """support lookup by value"""
+        self.nodeMap[node.value] = node
 
     def addPartitionWithEdge(self, partition, edge):
         for n in partition.nodes:
             self.nodes.append(n)
         for e in partition.edges:
             self.edges.append(e)
-        self.addEdge(copyEdge(edge))
+        self.addEdge(self.copyEdge(edge))
 
     def copyEdge(self, edge):
         f = self.lookup(edge.node_from)
@@ -69,17 +88,31 @@ class Partition(Graph):
         return Edge(edge.value, f, t)
 
     def addEdge(self, edge):
+        f = self.lookup(edge.node_from)
+        t = self.lookup(edge.node_to)
         f.edges.append(edge)
         t.edges.append(edge)
         self.edges.append(edge)
 
     def lookup(self, node):
-        return self.nMap[node.value]
+        return self.nodeMap[node.value]
+
+    def contains(self, node):
+        return node.value in self.nodeMap
+
+    def __str__(self):
+        s = ''
+        for n in self.nodes:
+            s += str(n) + ', '
+        return s
+
+    def __repr__(self):
+        return 'Partition('+self.__str__()+')'
 
 
 def question3(G):
     # nmap is a dictionary for node lookup by id
-    self.nmap = {}
+    nmap = {}
     nodes = []
     edges = []
 
@@ -102,13 +135,13 @@ def question3(G):
         return graph
 
     """Now compute minimum spanning tree by adding edges to unvisited
-    nodes shortest edge first until all nodes have been visited and all 
-    partitions are connected.  That is, when each edge is added, it either 
-    connects a new node to an existing group of connected, visited, nodes 
-    (a partition) or it forms a new partition of the two nodes it connects.  
+    nodes shortest edge first until all nodes have been visited and all
+    partitions are connected.  That is, when each edge is added, it either
+    connects a new node to an existing group of connected, visited, nodes
+    (a partition) or it forms a new partition of the two nodes it connects.
     We keep a list of partitions, each with a dictionary
-    of its nodes so it is efficient to test whether a given 
-    node is in the partition.  
+    of its nodes so it is efficient to test whether a given
+    node is in the partition.
 
     Because this algorithm adds each node exactly
     once with an edge connecting it to the rest, a tree is formed.  Because
@@ -116,44 +149,60 @@ def question3(G):
     spanning tree.  I think this could be proved by induction but I'll skip
     the proof here."""
     edgeQueue = sorted(edges, key=lambda edge: edge.value, reverse=True)
-    nodesAdded = 0
     totalNodeCount = len(nodes)
-    e = edgeQueue.pop()
-    partition = Partition([e.node_from.vcopy, e.node_to.vcopy], [e])
+    e = edgeQueue.pop()  # first edge nodes form a new Partition
+    partition = Partition([e.node_from, e.node_to], [e])
+    nodesAdded = 2  # first edge added two nodes
     partitions = [partition]
-    while nodesAdded < totalNodeCount and len(partitions) > 1:
+    # print(nodesAdded,totalNodeCount, len(partitions))
+    while nodesAdded < totalNodeCount or len(partitions) > 1:
         newNodes = []
-        newPartitionsConnected = []
-        while len(newNodes) == 0 and len(newPartitionsConnected) == 0:
+        toMerge = []
+        while len(newNodes) == 0 and len(toMerge) == 0:
             e = edgeQueue.pop()  # get shortest edge that might add something
+            print('edge to inspect:', e)
             newNodes = getUnvisitedNodes(e)
             if len(newNodes) == 0:
-                newPartitionsConnected = partitionsConnected(e, partitions)
+                toMerge = partitionsConnected(e, partitions)
         e.node_from.visited = True
         e.node_to.visited = True
         if len(newNodes) == 2:
             partition = Partition([e.node_from, e.node_to], [e])
             partitions.append(partition)
+            print('+++++++added partition:', len(partitions))
         elif len(newNodes) == 1:
-            partition = findPartition(e, newNodes[0], partitions)
-            partition.addNodeWithEdge(newNodes[0], e)
+            newNode = newNodes[0]
+            partition = findPartition(e, newNode, partitions)
+            partition.addNode(newNode)
+            partition.addEdge(e)
+            nodesAdded += 1
+            print('+++++++added node:', nodesAdded)
         else:
-            partitionsConnected[0].addPartitionWithEdge(partitionsConnected[1], e)
+            toMerge[0].addPartitionWithEdge(toMerge[1], e)
+            partitions.remove(toMerge[1])
+            print('+++++++merged partitions:', len(partitions))
+        print('+++++++', nodesAdded, len(partitions))
 
     return partitions[0]
 
 def getUnvisitedNodes(edge):
     new = []
     if not edge.node_from.visited:
+        # print('+++++')
+        # print(edge.node_from)
         new.append(edge.node_from)
     if not edge.node_to.visited:
+        # print('_-_-_-_-')
+        # print(edge.node_to)
         new.append(edge.node_to)
+    # print('........')
+    # print(new)
     return new
 
 def partitionsConnected(edge, partitions):
     touchedByEdge = []
     for p in partitions:
-        if p.lookup(edge.node_from) or p.lookup(edge.node_to):
+        if p.contains(edge.node_from) or p.contains(edge.node_to):
             touchedByEdge.append(p)
         if len(touchedByEdge) == 2:
             return touchedByEdge
@@ -165,6 +214,15 @@ def findPartition(edge, newNode, partitions):
     else:
         oldNode = edge.node_from
     for p in partitions:
-        if p.lookup(oldNode):
+        if p.contains(oldNode):
             return p
     return None
+
+def test(g, expect):
+    print(g)
+    print('expect {}, actual {}'.format(expect, question3(g).edgesSum()))
+
+g = {'A': [('B', 2)],
+ 'B': [('A', 2), ('C', 5)],
+ 'C': [('B', 5)]}
+test(g, 7)
